@@ -5,7 +5,7 @@
 [![](https://godoc.org/github.com/xplorfin/pointerutils?status.svg)](https://godoc.org/github.com/xplorfin/pointerutils)
 [![Go Report Card](https://goreportcard.com/badge/github.com/xplorfin/pointerutils)](https://goreportcard.com/report/github.com/xplorfin/pointerutils)
 
-Functions for converting go builtin types to and from pointer values.
+Functions for converting go builtin types to and from pointer values by [entropy](https://entropy.rocks).
 
 ## Installation
 `go get -u github.com/xplorfin/pointerutils`
