@@ -1,8 +1,7 @@
 # pointerutils
-[![Coverage Status](https://coveralls.io/repos/github/xplorfin/pointer-utils/badge.svg?branch=master)](https://coveralls.io/github/xplorfin/pointerutils?branch=master)
-[![Renovate enabled](https://img.shields.io/badge/renovate-enabled-brightgreen.svg)](https://app.renovatebot.com/dashboard#github/xplorfin/pointerutils)
-[![Build status](https://github.com/xplorfin/pointerutils/workflows/test/badge.svg)](https://github.com/xplorfin/pointerutils/actions?query=workflow%3Atest)
-[![Build status](https://github.com/xplorfin/pointerutils/workflows/goreleaser/badge.svg)](https://github.com/xplorfin/pointerutils/actions?query=workflow%3Agoreleaser)
+[![Coverage Status](https://coveralls.io/repos/github/xplorfin/pointerutils/badge.svg?branch=master)](https://coveralls.io/github/xplorfin/pointerutils?branch=master)
+[![Lint/Test](https://github.com/xplorfin/pointerutils/actions/workflows/tests.yml/badge.svg)](https://github.com/xplorfin/pointerutils/actions/workflows/tests.yml)
+[![Build Status](https://github.com/xplorfin/pointerutils/actions/workflows/tagrelease.yml/badge.svg)](https://github.com/xplorfin/pointerutils/actions/workflows/tagrelease.yml)
 [![](https://godoc.org/github.com/xplorfin/pointerutils?status.svg)](https://godoc.org/github.com/xplorfin/pointerutils)
 [![Go Report Card](https://goreportcard.com/badge/github.com/xplorfin/pointerutils)](https://goreportcard.com/report/github.com/xplorfin/pointerutils)
 
