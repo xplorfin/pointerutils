@@ -88,7 +88,7 @@ air-install:
 stringer-install:
 	@if [ "$(shell which "stringer")" = "" ]; then $(GOGET) golang.org/x/tools/cmd/stringer; fi;
 
-lint: golangci-install ## Run the golangci-lint application (install if not found) & fix issues if possible
+ci-lint: golangci-install ## Run the golangci-lint application (install if not found) & fix issues if possible
 	@golangci-lint run --fix
 
 # pre-commit hook
