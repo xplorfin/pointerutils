@@ -1,0 +1,34 @@
+name: Slack Notify
+
+on:
+  workflow_run:
+    workflows: ["Tag Release"]
+    branches: [master]
+    types: [completed]
+
+jobs:
+  on-success:
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    steps:
+      - name: Notify slack success
+        env:
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+        uses: voxmedia/github-action-slack-notify-build@v2
+        with:
+          channel: activity
+          status: SUCCESS
+          color: good
+
+  on-failure:
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'failure' }}
+    steps:
+      - name: Notify slack fail
+        env:
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+        uses: voxmedia/github-action-slack-notify-build@v2
+        with:
+          channel: activity
+          status: FAILED
+          color: danger
