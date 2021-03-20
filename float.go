@@ -19,7 +19,7 @@ func FromFloat64(f float64) *float64 {
 	return &f
 }
 
-// ToFloat64 makes a float 64 from a float 65 pointer
+// ToFloat64 makes a float 64 from a float 64 pointer
 func ToFloat64(f *float64) float64 {
 	if f != nil {
 		return *f
