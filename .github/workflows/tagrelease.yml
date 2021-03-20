@@ -10,7 +10,7 @@ on:
 jobs:
   bump_version:
     runs-on: ubuntu-latest
-    if: "!contains(toJSON(github.event.commits.*.message), '[ci skip]') && github.event.workflow_run.conclusion == 'success'"
+    if: ${{ !contains(toJSON(github.event.commits.*.message), '[ci skip]') && github.event.workflow_run.conclusion == 'success' }}
     steps:
       - name: Git Checkout
         uses: actions/checkout@v2
