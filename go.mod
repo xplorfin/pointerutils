@@ -1,4 +1,4 @@
-module github.com/xplorfin/go-template
+module github.com/xplorfin/pointerutils
 
 go 1.14
 

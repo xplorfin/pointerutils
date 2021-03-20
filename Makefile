@@ -1,9 +1,6 @@
-# Constants
-GHCR_URL=ghcr.io/xplorfin
-
 # variables related to your microservice
 # change SERVICE_NAME to whatever you're naming your microservice
-SERVICE_NAME=go-template
+SERVICE_NAME=pointer-utils
 # name of output binary
 BINARY_NAME=main
 
@@ -14,6 +11,10 @@ LATEST_COMMIT_HASH=$(shell git rev-parse HEAD)
 GO=go
 GOB=$(GO) build
 GOM=$(GO) mod
+GOTEST=$(GO) test
+GOGET=$(GO) get -u
+GOM_TIDY=$(GOM) tidy
+CLEAN_MODS=$(GO) clean -modcache
 
 # git commands
 GIT=git
@@ -27,6 +28,8 @@ GOARCH=amd64
 # currently installed/running Go version (full and minor)
 GOVERSION=$(shell go version | grep -Eo '[1-2]\.[[:digit:]]{1,3}\.[[:digit:]]{0,3}')
 MINORVER=$(shell echo $(GOVERSION) | awk '{ split($$0, array, ".") } {print array[2]}')
+GOPATH=$(shell go env GOPATH)
+GOPATH_BIN="$(GOPATH)/bin"
 
 # Color code definitions
 # Note: everything is bold.
@@ -38,46 +41,52 @@ RESET_COLOR=\033[0m
 
 COLORECHO = $(1)$(2)$(RESET_COLOR)
 
-default: help
+GOLANGCI_URI="https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh"
 
-# build a vendored binary for macos
-macos: gomvendor build-macos
+default: hook-config help
 
-# build a vendored binary for linx
-linux: gomvendor build-linux
-
-setup-hooks: ## setup the repository (enables git hooks)
+hook-config:
 	git config core.hooksPath .github/hooks --replace-all
 
+setup: hook-config air-install stringer-install ## setup the repository (enables git hooks and installs air/stringer for generation)
+
 bench:  ## Run all benchmarks in the Go application
-	@go test -bench=. -benchmem
+	@$(GOTEST) -bench=. -benchmem
+
+check-vars:
+	@echo $(GOPATH_BIN)
+
+mod-tidy:
+	@$(GOM_TIDY)
 
 clean-mods: ## Remove all the Go mod cache
-	@go clean -modcache
+	@$(CLEAN_MODS)
 
 coverage: ## Get the test coverage from go-coverage
-	@go test -coverprofile=coverage.out ./... && go tool cover -func=coverage.out
+	@$(GOTEST) -coverprofile=coverage.out ./... && go tool cover -func=coverage.out
 
 godocs: ## Run a godoc server
 	@echo "godoc server running on http://localhost:9000"
 	@godoc -http=":9000"
 
-
 golangci-install:
 	@#Travis (has sudo)
-	@if [ "$(shell which golangci-lint)" = "" ] && [ $(TRAVIS) ]; then curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s && sudo cp ./bin/golangci-lint $(go env GOPATH)/bin/; fi;
+	@if [ "$(shell which golangci-lint)" = "" ] && [ $(TRAVIS) ]; then curl -sSfL $(GOLANGCI_URI) | sh -s v1.33.0 && sudo cp ./bin/golangci-lint $(GOPATH_BIN)/; fi;
 	@#AWS CodePipeline
-	@if [ "$(shell which golangci-lint)" = "" ] && [ "$(CODEBUILD_BUILD_ID)" != "" ]; then curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin; fi;
+	@if [ "$(shell which golangci-lint)" = "" ] && [ "$(CODEBUILD_BUILD_ID)" != "" ]; then curl -sSfL $(GOLANGCI_URI) | sh -s -- -b $(GOPATH_BIN); fi;
 	@#Github Actions
-	@if [ "$(shell which golangci-lint)" = "" ] && [ "$(GITHUB_WORKFLOW)" != "" ]; then curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s && sudo cp ./bin/golangci-lint $(go env GOPATH)/bin/; fi;
+	@if [ "$(shell which golangci-lint)" = "" ] && [ "$(GITHUB_WORKFLOW)" != "" ]; then curl -sfL $(GOLANGCI_URI) | sudo sh -s -- -b $(GOPATH_BIN); fi;
 	@#Brew - MacOS
 	@if [ "$(shell which golangci-lint)" = "" ] && [ "$(shell which brew)" != "" ]; then brew install golangci-lint; fi;
 
 go-acc-install:
-	@if [ "$(shell which "go-acc")" = "" ]; then go get -u github.com/ory/go-acc; fi;
+	@if [ "$(shell which "go-acc")" = "" ]; then $(GOGET) github.com/ory/go-acc; fi;
 
-ci-lint: golangci-install ## Run the golangci-lint application (install if not found) & fix issues if possible
-	@golangci-lint run
+air-install:
+	@if [ "$(shell which "air")" = "" ]; then $(GOGET) github.com/cosmtrek/air; fi;
+
+stringer-install:
+	@if [ "$(shell which "stringer")" = "" ]; then $(GOGET) golang.org/x/tools/cmd/stringer; fi;
 
 lint: golangci-install ## Run the golangci-lint application (install if not found) & fix issues if possible
 	@golangci-lint run --fix
@@ -86,22 +95,11 @@ lint: golangci-install ## Run the golangci-lint application (install if not foun
 pre-commit: lint
 
 test: ## run tests without coverage reporting
-	@go test ./...
+	@$(GOTEST) ./...
 
-ci-test: go-acc-install # run a test with coverage
+ci-test: golangci-install go-acc-install # run a test with coverage
+	@golangci-lint run
 	@go-acc -o profile.cov ./...
-
-gomvendor: ## run tidy & vendor
-	@go mod tidy
-	@go mod vendor
-
-build-macos: ## build binaries for macos
-	env GOOS=$(GOOS_MACOS) GOARCH=$(GOARCH) \
-	$(GOB) -mod vendor -o $(BINARY_NAME)
-
-build-linux: ## build binaries for linux
-	env GOOS=$(GOOS_LINUX) GOARCH=$(GOARCH) \
-	$(GOB) -mod vendor -o $(BINARY_NAME)
 
 
 help: ## This help dialog.
@@ -115,23 +113,3 @@ help: ## This help dialog.
 		printf "%-30s %s\n" $$help_command $$help_info ; \
 	done
 
-docker: docker-build docker-push ## build and push docker image to GHCR
-
-# Builds a docker container from a Dockerfile.
-# If you have more complex Docker arguments than just tags and the source,
-# consider writing your own recipe.
-DOCKER_IMAGE_NAME=$(GHCR_URL)/$(SERVICE_NAME)
-docker-build: docker/Dockerfile.make gomvendor ## build a docker file
-	@echo "[*] Latest git commit hash: $(call COLORECHO,$(GREEN),$(LATEST_COMMIT_HASH))"
-	@echo "[*] Building Docker image $(call COLORECHO,$(BLUE),$(DOCKER_IMAGE_NAME))" \
-	"with tags $(call COLORECHO,$(MAGENTA),latest), $(call COLORECHO,$(LIGHT_BLUE),$(LATEST_COMMIT_HASH))"
-	docker build -f docker/Dockerfile.make \
-		-t $(DOCKER_IMAGE_NAME):latest \
-		-t $(DOCKER_IMAGE_NAME):$(LATEST_COMMIT_HASH) \
-		.
-
-docker-push: ## pushes a built image to GHCR
-	@echo "[*] Pushing $(call COLORECHO,$(LIGHT_BLUE),$(DOCKER_IMAGE_NAME):$(LATEST_COMMIT_HASH)) to GHCR"
-	docker push $(DOCKER_IMAGE_NAME):$(LATEST_COMMIT_HASH)
-	@echo "[*] Pushing $(call COLORECHO,$(MAGENTA),$(DOCKER_IMAGE_NAME):latest) to GHCR"
-	docker push $(DOCKER_IMAGE_NAME):latest
